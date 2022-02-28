@@ -13,6 +13,42 @@ struct ContentView: View {
   @State private var text: String = ""
   
   // MARK: - FUNCTION
+  func getDocumentDirectory() -> URL {
+    let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+    return path[0]
+  }
+  
+  func save() {
+    do {
+      let data = try JSONEncoder().encode(notes)
+      let url = getDocumentDirectory().appendingPathComponent("notes")
+      
+      try data.write(to: url)
+    } catch {
+      print("Saving data has failed!")
+    }
+  }
+  
+  func delete(offsets: IndexSet) {
+    withAnimation {
+      notes.remove(atOffsets: offsets)
+      save()
+    }
+  }
+  
+  func load() {
+    DispatchQueue.main.async {
+      do {
+        let url = getDocumentDirectory().appendingPathComponent("notes")
+        let data = try Data(contentsOf: url)
+        
+        notes = try JSONDecoder().decode([Note].self, from: data)
+      } catch {
+        print("No data found")
+      }
+    }
+  }
+  
   func addNewNote() {
     guard !text.isEmpty else { return }
     
@@ -21,7 +57,7 @@ struct ContentView: View {
     
     text = ""
     
-    dump(notes)
+    save()
   }
   
   // MARK: - BODY
@@ -41,10 +77,36 @@ struct ContentView: View {
       
       Spacer()
       
-      Text("\(notes.count)")
+      if !notes.isEmpty {
+        List {
+          ForEach(notes) { note in
+            HStack {
+              Capsule()
+                .frame(width: 4)
+                .foregroundColor(.accentColor)
+              Text(note.text)
+                .lineLimit(1)
+                .padding(.leading, 5)
+            } //: HSTACK
+          } //: NOTE ITEM
+          .onDelete(perform: delete)
+        }
+      } else {
+        Spacer()
+        Image(systemName: "note.text")
+          .resizable()
+          .scaledToFit()
+          .foregroundColor(.gray)
+          .opacity(0.25)
+          .padding(25)
+        Spacer()
+      } //: LIST
     } //: VSTACK
     .navigationTitle("Notes")
     .navigationBarTitleDisplayMode(.inline)
+    .onAppear {
+      load()
+    }
   }
 }
 
