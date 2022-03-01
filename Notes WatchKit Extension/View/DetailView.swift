@@ -10,6 +10,7 @@ import SwiftUI
 struct DetailView: View {
   // MARK: - PROPERTY
   @State private var isCreditsPresented: Bool = false
+  @State private var isSettingsPresented: Bool = false
   
   let note: Note
   let count: Int
@@ -37,6 +38,12 @@ struct DetailView: View {
       HStack(alignment: .center) {
         Image(systemName: "gear")
           .imageScale(.large)
+          .onTapGesture {
+            isSettingsPresented.toggle()
+          }
+          .sheet(isPresented: $isSettingsPresented) {
+            SettingsView()
+          }
         
         Spacer()
         
